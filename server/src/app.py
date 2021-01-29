@@ -13,7 +13,6 @@ db = SQLAlchemy(app)
 
 from models import User
 
-
 @app.route('/')
 def index():
     return 'all requests should be made through api endpoints.'
@@ -65,7 +64,7 @@ def api_signup():
     password = bcrypt.hashpw(str.encode(password),
                              bcrypt.gensalt())
 
-    new_user = User(username=username, password=password)
+    new_user = User(username=username, password=password, role='Patient')
     db.session.add(new_user)
     db.session.commit()
 
@@ -220,7 +219,7 @@ def api_setup_otp():
             'data': {
                 'title': 'Not logged in'
             }
-        })
+        })    
 
     otp_secret = pyotp.random_base32()
     user = User.query.filter_by(id=session['uid']).first()
@@ -234,3 +233,64 @@ def api_setup_otp():
             'otp_link': otp_link
         }
     })
+    
+@app.route('/api/change-role', methods=['post'])
+def api_change_role():
+    if (
+        not request.data
+        or 'username' not in request.get_json()
+        or 'role' not in request.get_json()
+    ):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Missing data'
+            }
+        })
+        
+    if not session.get('uid'):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Not logged in'
+            }
+        })
+    
+    request_payload = request.get_json()
+    username = request_payload['username']
+    role = request_payload['role']
+    admin_user = User.query.filter_by(id=session['uid']).first()
+    user = User.query.filter_by(username=username).first()
+    
+    if not admin_user.role == "Admin":
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Not Admin'
+            }
+        })
+        
+    if role not in ['Admin', 'Regulator', 'Staff', 'Patient']:
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Role not allowed'
+            }
+        })
+    
+    if admin_user == user:
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Cant change own role'
+            }
+        })
+    
+    user.role = role
+    db.session.commit()
+    
+    return jsonify({
+        'status': 'success',
+        'data': {}
+    })
+
