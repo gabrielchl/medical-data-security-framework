@@ -13,7 +13,13 @@ def help():
     print('change_pw <username> <old_password> <new_password> [otp_code]')
     print('signout')
     print('setup_otp')
-    print('change_role')
+    print('change_role <username> <role>')
+    print('add_patient_record <name> <age> <user id> <doctor id>')
+    print('add_staff_record <name> <user id>')
+    print('remove_patient_record <id>')
+    print('remove_staff_record <id>')
+    print('update_patient_record <id> <name> <age> <user id> <doctor id>')
+    print('update_staff_record <id> <name> <user id>')
 
 def signup(username, password):
     response = s.post(
@@ -83,7 +89,80 @@ def change_role(username, role):
         json=payload
     )
     print(response.json())
+
+def view():
+    response = s.get('{}/api/view'.format(server_url)).json()
+    print(response)
     
+def add_patient_record(name, age, user_id, doctor_id):
+    payload = {
+        'name': name,
+        'age': age,
+        'user_id': user_id,
+        'doctor_id': doctor_id
+    }
+    response = s.post(
+        '{}/api/add-patient-record'.format(server_url),
+        json=payload
+    )
+    print(response.json())
+    
+def add_staff_record(name, user_id):
+    payload = {
+        'name': name,
+        'user_id': user_id
+    }
+    response = s.post(
+        '{}/api/add-staff-record'.format(server_url),
+        json=payload
+    )
+    print(response.json())
+    
+def remove_patient_record(id):
+    payload = {
+        'id': id
+    }
+    response = s.post(
+        '{}/api/remove-patient-record'.format(server_url),
+        json=payload
+    )
+    print(response.json())
+
+def remove_staff_record(id):
+    payload = {
+        'id': id
+    }
+    response = s.post(
+        '{}/api/remove-staff-record'.format(server_url),
+        json=payload
+    )
+    print(response.json())
+        
+def update_patient_record(id, name, age, user_id, doctor_id):
+    payload = {
+        'id': id,
+        'name': name,
+        'age': age,
+        'user_id': user_id,
+        'doctor_id': doctor_id
+    }
+    response = s.post(
+        '{}/api/update-patient-record'.format(server_url),
+        json=payload
+    )
+    print(response.json())
+    
+def update_staff_record(id, name, user_id):
+    payload = {
+        'id': id,
+        'name': name,
+        'user_id': user_id
+    }
+    response = s.post(
+        '{}/api/update-staff-record'.format(server_url),
+        json=payload
+    )
+    print(response.json())        
         
 class Command:
     def __init__(self, name, num_argument, function):
@@ -98,7 +177,16 @@ commands = [
     Command('change_pw', 3, change_pw),
     Command('signout', 0, signout),
     Command('setup_otp', 0, setup_otp),
-    Command('change_role', 2, change_role)
+    Command('change_role', 2, change_role),
+    Command('view', 0, view),
+    Command('add_patient_record', 4,add_patient_record),
+    Command('add_staff_record', 2,add_staff_record),
+    Command('remove_patient_record', 1,remove_patient_record),
+    Command('remove_staff_record', 1,remove_staff_record),
+    Command('update_patient_record', 5,update_patient_record),
+    Command('update_staff_record', 3,update_staff_record)
+    
+    
 ]
 
 if __name__ == '__main__':

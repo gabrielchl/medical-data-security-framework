@@ -11,8 +11,8 @@ app.config['SECRET_KEY'] = 'gaSM0zm4mGkiiByqcXmHCRkLPwlHrcBw'.encode('utf8')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prod.db'
 db = SQLAlchemy(app)
 
-from models import User
-
+from models import User, Patient, Staff
+        
 @app.route('/')
 def index():
     return 'all requests should be made through api endpoints.'
@@ -259,10 +259,10 @@ def api_change_role():
     request_payload = request.get_json()
     username = request_payload['username']
     role = request_payload['role']
-    admin_user = User.query.filter_by(id=session['uid']).first()
+    request_user = User.query.filter_by(id=session['uid']).first()
     user = User.query.filter_by(username=username).first()
     
-    if not admin_user.role == "Admin":
+    if not request_user.role == "Admin":
         return jsonify({
             'status': 'fail',
             'data': {
@@ -278,7 +278,7 @@ def api_change_role():
             }
         })
     
-    if admin_user == user:
+    if request_user == user:
         return jsonify({
             'status': 'fail',
             'data': {
@@ -293,4 +293,265 @@ def api_change_role():
         'status': 'success',
         'data': {}
     })
+    
+@app.route('/api/add-patient-record', methods=['post'])
+def api_add_patient_record():
+    if (
+        not request.data
+        or 'name' not in request.get_json()
+        or 'age' not in request.get_json()
+        or 'user_id' not in request.get_json()
+        or 'doctor_id' not in request.get_json()
+    ):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Missing data'
+            }
+        })
+        
+    request_user = User.query.filter_by(id=session['uid']).first()
+        
+    if request_user.role not in ['Admin', 'Staff']:
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Insufficient permissions'
+            }
+        })
+        
+    request_payload = request.get_json()
+    new_patient = Patient(name=request_payload['name'],
+                    age=request_payload['age'],
+                    user_id=request_payload['user_id'],
+                    doctor_id=request_payload['doctor_id'])
+    db.session.add(new_patient)
+    db.session.commit()
+    
+    return jsonify({
+        'status': 'success',
+        'data': {}
+    })
+    
+@app.route('/api/add-staff-record', methods=['post'])
+def api_add_staff_record():
+    if (
+        not request.data
+        or 'name' not in request.get_json()
+        or 'user_id' not in request.get_json()
+    ):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Missing data'
+            }
+        })
+    request_user = User.query.filter_by(id=session['uid']).first()
+    
+    if not request_user.role == "Admin":
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Not Admin'
+            }
+        })
+        
+    request_payload = request.get_json()
+    new_staff = Staff(name=request_payload['name'],
+                      user_id=request_payload['user_id'])
+    db.session.add(new_staff)
+    db.session.commit()
+    
+    return jsonify({
+        'status': 'success',
+        'data': {}
+    })
+    
+@app.route('/api/remove-patient-record', methods=['post'])
+def api_remove_patient_record():
+    if (
+        not request.data
+        or 'id' not in request.get_json()
+    ):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Missing data'
+            }
+        })
+        
+    request_payload = request.get_json()
+    staff_user = User.query.filter_by(id=session['uid']).first()
+        
+    if staff_user.role not in ['Admin', 'Staff']:
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Insufficient permissions'
+            }
+        })
+    
+    Patient.query.filter_by(id=request_payload['id']).delete()    
+    db.session.commit()
+    return jsonify({
+            'status': 'success',
+            'data': {
+                'title': 'Patient record deleted'
+            }
+        })
 
+@app.route('/api/remove-staff-record', methods=['post'])
+def api_remove_staff_record():
+    if (
+        not request.data
+        or 'id' not in request.get_json()
+    ):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Missing data'
+            }
+        })
+        
+    request_user = User.query.filter_by(id=session['uid']).first() 
+    if not request_user.role == "Admin":
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Not Admin'
+            }
+        })
+        
+    request_payload = request.get_json()
+    
+    Staff.query.filter_by(id=request_payload['id']).delete()    
+    db.session.commit()
+    return jsonify({
+            'status': 'success',
+            'data': {
+                'title': 'Staff record deleted'
+            }
+        })
+    
+@app.route('/api/update-patient-record', methods=['post'])
+def api_update_patient_record():
+    if (
+        not request.data
+        or 'id' not in request.get_json()
+        or 'name' not in request.get_json()
+        or 'age' not in request.get_json()
+        or 'user_id' not in request.get_json()
+        or 'doctor_id' not in request.get_json()
+    ):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Missing data'
+            }
+        })
+        
+    staff_user = User.query.filter_by(id=session['uid']).first()
+        
+    if staff_user.role not in ['Admin', 'Staff']:
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Insufficient permissions'
+            }
+        })
+        
+    request_payload = request.get_json()
+    patient = Patient.query.filter_by(id=request_payload['id']).first()
+    patient.name = request_payload['name']
+    patient.age = request_payload['age']
+    patient.user_id = request_payload['user_id']
+    patient.doctor_id = request_payload['doctor_id']    
+    db.session.commit()
+    return jsonify({
+            'status': 'success',
+            'data': {
+                'title': 'Patient record updated'
+            }
+        })
+    
+@app.route('/api/update-staff-record', methods=['post'])
+def api_update_staff_record():
+    if (
+        not request.data
+        or 'id' not in request.get_json()
+        or 'name' not in request.get_json()
+        or 'user_id' not in request.get_json()
+    ):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Missing data'
+            }
+        })
+        
+    request_user = User.query.filter_by(id=session['uid']).first() 
+    if not request_user.role == "Admin":
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Not Admin'
+            }
+        })
+        
+    request_payload = request.get_json()
+    staff = Staff.query.filter_by(id=request_payload['id']).first()
+    staff.name = request_payload['name']
+    staff.user_id = request_payload['user_id']
+    db.session.commit()
+    return jsonify({
+            'status': 'success',
+            'data': {
+                'title': 'Staff record updated'
+            }
+        })
+
+@app.route ('/api/view')
+def api_view():
+    if not session.get('uid'):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Not logged in'
+            }
+        })    
+    
+    user = User.query.filter_by(id=session['uid']).first()
+    
+    if user.role == 'Regulator':
+        all_patients = Patient.query.all()
+        return jsonify({
+            'status': 'success',
+            'data': str(all_patients)
+        })
+        
+    if user.role == 'Staff':
+        doctor = Staff.query.filter_by(user_id=session['uid']).first()
+        all_patients = Patient.query.filter_by(doctor_id=doctor.id).all()
+        return jsonify({
+            'status': 'success',
+            'data': str(all_patients)
+        })
+    
+    patient = Patient.query.filter_by(user_id=session['uid']).first()
+    
+    if patient:
+        return jsonify({
+        'status': 'success',
+        'data': {
+            'name': patient.name,
+            'age': patient.age
+        }
+    })
+    
+    return jsonify({
+        'status': 'fail',
+        'data': {
+            'title': 'No patient data found for you'
+        }
+    })
+    
