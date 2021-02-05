@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\radis\\AppData\\Local\\Programs\\Python\\Python39\\python.exe"
+    "python.pythonPath": "C:\\Users\\radis\\AppData\\Local\\Programs\\Python\\Python39\\python.exe",
+    "maven.view": "hierarchical"
 }
