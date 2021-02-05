@@ -11,7 +11,7 @@ app.config['SECRET_KEY'] = 'gaSM0zm4mGkiiByqcXmHCRkLPwlHrcBw'.encode('utf8')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prod.db'
 db = SQLAlchemy(app)
 
-from models import User, Patient, Staff
+from models import User, Patient, Staff, AuditLogin
         
 @app.route('/')
 def index():
