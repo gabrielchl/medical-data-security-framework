@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request, session
 from flask_sqlalchemy import SQLAlchemy
 import pyotp
 
-from utils import weak_password, common_password
+from utils import weak_password, common_password, populate_db
 
 app = Flask(__name__)
 
@@ -11,7 +11,7 @@ app.config['SECRET_KEY'] = 'gaSM0zm4mGkiiByqcXmHCRkLPwlHrcBw'.encode('utf8')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prod.db'
 db = SQLAlchemy(app)
 
-from models import User, Patient, Staff, AuditLogin
+from models import User, Patient, Staff, Logs
         
 @app.route('/')
 def index():
@@ -555,6 +555,32 @@ def api_view():
         }
     })
 
+
     # commit and push check 
     # new branch
     
+
+@app.route ('/api/audit-logs')
+def api_audit_logs():
+
+    #check if user is signed in
+    if not session.get('uid'):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Not logged in'
+            }
+        })    
+    
+    user = User.query.filter_by(id=session['uid']).first()
+    
+    if user.role == 'Regulator' or 'Admin' or 'Staff':
+        all_logs = Logs.query.all()
+        return jsonify({
+            'status': 'success',
+            'data': str(all_logs)
+        })
+    
+    logs = Logs.query.filter_by(user_id=session['uid']).first()
+    
+   

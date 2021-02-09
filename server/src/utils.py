@@ -23,3 +23,17 @@ def common_password(password):
             return True
 
     return False
+
+def populate_db(id, time, user_id, severity, type, message):
+    
+    # ----- UNCOMPLETED
+    request_payload = request.get_json()
+    new_log = Logs( name=request_payload['name'],
+                    time=request_payload['time'],
+                    user_id=request_payload['user_id'],
+                    severity=request_payload['severity'],
+                    log_type=request_payload['log_type'],
+                    message=request_payload['message'])
+
+    db.session.add(new_log)
+    db.session.commit()

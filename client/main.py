@@ -20,6 +20,7 @@ def help():
     print('remove_staff_record <id>')
     print('update_patient_record <id> <name> <age> <user id> <doctor id>')
     print('update_staff_record <id> <name> <user id>')
+    print('audit_logs')
 
 def signup(username, password):
     response = s.post(
@@ -164,6 +165,10 @@ def update_staff_record(id, name, user_id):
     )
     print(response.json())        
         
+def audit_logs():
+    response = s.get('{}/api/audit-logs'.format(server_url)).json()
+    print(response.json())
+
 class Command:
     def __init__(self, name, num_argument, function):
         self.name = name
@@ -184,10 +189,10 @@ commands = [
     Command('remove_patient_record', 1,remove_patient_record),
     Command('remove_staff_record', 1,remove_staff_record),
     Command('update_patient_record', 5,update_patient_record),
-    Command('update_staff_record', 3,update_staff_record)
-    
-    
+    Command('update_staff_record', 3,update_staff_record),
+    Command('audit_logs', 0, audit_logs)
 ]
+
 
 if __name__ == '__main__':
     while True:

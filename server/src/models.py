@@ -30,11 +30,14 @@ class User(db.Model):
     def __repr__(self):
         return '<User {} {} {}>'.format(self.id, self.username, self.role)
 
-class AuditLogin(db.Model):
+class Logs(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    usercheck = db.Column(db.String(80), nullable=False)
-    result = db.Column(db.String(80), nullable=False)
- 
+    time = db.Column(db.String(80), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('staff.id'))
+    severity = db.Column(db.String(80), nullable=False)
+    log_type = db.Column(db.String(80), nullable=False)
+    message = db.Column(db.String(80), nullable=False)
+    
     def __repr__(self):
-        return '<Audit Logs {} {} {}>'.format(self.id, self.user, self.result)
+        return '<Logs {} {} {} {} {} {}>'.format(self.id, self.time, self.user_id, self.severity, self.log_type, self.message)
    
