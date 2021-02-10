@@ -1,13 +1,7 @@
 import re
 
-
-from flask import Flask, jsonify, request, session
-from flask_sqlalchemy import SQLAlchemy
-utils = Flask(__name__)
-utils.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prod.db'
-db = SQLAlchemy(utils)
-
-from models import User, Logs
+from app import db
+from models import Logs
 
 def weak_password(password):
     if len(password) < 5:
@@ -34,11 +28,11 @@ def common_password(password):
 
 def populate_db(time_p, user_id_p, severity_p, log_type_p, message_p):
     
-    new_log = Logs( time=['time_p'],
-                    user_id=['user_id_p'],
-                    severity=['severity_p'],
-                    log_type=['log_type_p'],
-                    message=['message_p'])
+    new_log = Logs( time=time_p,
+                    user_id=user_id_p,
+                    severity=severity_p,
+                    log_type=log_type_p,
+                    message=message_p)
 
     db.session.add(new_log)
     db.session.commit()

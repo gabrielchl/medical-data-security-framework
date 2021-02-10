@@ -3,7 +3,6 @@ from flask import Flask, jsonify, request, session
 from flask_sqlalchemy import SQLAlchemy
 import pyotp
 
-from utils import weak_password, common_password, populate_db
 
 app = Flask(__name__)
 
@@ -11,6 +10,7 @@ app.config['SECRET_KEY'] = 'gaSM0zm4mGkiiByqcXmHCRkLPwlHrcBw'.encode('utf8')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prod.db'
 db = SQLAlchemy(app)
 
+from utils import weak_password, common_password, populate_db
 from models import User, Patient, Staff, Logs
         
 @app.route('/')
@@ -113,15 +113,8 @@ def api_signin():
         })
 
     
-    if populate_db('time', user.id, 'severity', 'logtype', 'message'):
-        db.session.add(populate_db)
-        db.session.commit()
-        return jsonify({
-            'status': 'success record ',
-            'data': {
-                'title': 'record is populated.'
-            }
-        })
+    populate_db('time', user.id, 'severity', 'logtype', 'message')
+
 
     return jsonify({
         'status': 'fail',
