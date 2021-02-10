@@ -105,6 +105,9 @@ def api_signin():
                     }
                 })
 
+        session['uid']= user.id
+        populate_db('time', user.id, 'severity', 'logtype', 'message')
+
         session['uid'] = user.id
         return jsonify({
             'status': 'success',
@@ -113,8 +116,6 @@ def api_signin():
         })
 
     
-    populate_db('time', user.id, 'severity', 'logtype', 'message')
-
 
     return jsonify({
         'status': 'fail',
