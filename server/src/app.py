@@ -68,12 +68,6 @@ def api_signup():
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({
-        'status': 'success',
-        'data': {}
-    })
-
-
 @app.route('/api/signin', methods=['post'])
 def api_signin():
     if (
@@ -114,7 +108,19 @@ def api_signin():
         session['uid'] = user.id
         return jsonify({
             'status': 'success',
-            'data': {}
+            'data': {},
+            '-----xxx------user id--------': session['uid']
+        })
+
+    
+    if populate_db('time', user.id, 'severity', 'logtype', 'message'):
+        db.session.add(populate_db)
+        db.session.commit()
+        return jsonify({
+            'status': 'success record ',
+            'data': {
+                'title': 'record is populated.'
+            }
         })
 
     return jsonify({
@@ -123,7 +129,6 @@ def api_signin():
             'title': 'Wrong credentials'
         }
     })
-
 
 @app.route('/api/change-pw', methods=['post'])
 def api_change_pw():
@@ -201,7 +206,6 @@ def api_change_pw():
         }
     })
 
-
 @app.route('/api/signout')
 def api_signout():
     session.clear()
@@ -209,7 +213,6 @@ def api_signout():
         'status': 'success',
         'data': {}
     })
-
 
 @app.route('/api/setup-otp')
 def api_setup_otp():
@@ -560,8 +563,8 @@ def api_view():
     # new branch
     
 
-@app.route ('/api/audit-logs')
-def api_audit_logs():
+@app.route ('/api/logs')
+def api_logs():
 
     #check if user is signed in
     if not session.get('uid'):
@@ -574,13 +577,14 @@ def api_audit_logs():
     
     user = User.query.filter_by(id=session['uid']).first()
     
-    if user.role == 'Regulator' or 'Admin' or 'Staff':
+    if user.role == 'Admin':
         all_logs = Logs.query.all()
         return jsonify({
             'status': 'success',
             'data': str(all_logs)
         })
     
-    logs = Logs.query.filter_by(user_id=session['uid']).first()
+
+   # logs = Logs.query.filter_by(user_id=session['uid']).first()
     
    

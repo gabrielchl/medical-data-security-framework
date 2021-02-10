@@ -33,7 +33,7 @@ class User(db.Model):
 class Logs(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     time = db.Column(db.String(80), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('staff.id'))
+    user_id = db.Column(db.String(80))
     severity = db.Column(db.String(80), nullable=False)
     log_type = db.Column(db.String(80), nullable=False)
     message = db.Column(db.String(80), nullable=False)
