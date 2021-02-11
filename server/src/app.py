@@ -100,6 +100,7 @@ def api_signin():
     user = User.query.filter_by(username=username).first()
     if user and bcrypt.checkpw(str.encode(request_payload['password']),
                                user.password):
+        session['otp'] = False
         if user.otp_secret:
             if 'otp_code' not in request_payload:
                 return jsonify({
@@ -117,7 +118,9 @@ def api_signin():
                     }
                 })
 
-        session['uid']= user.id
+            session['otp'] = True
+
+        session['uid'] = user.id
         populate_db(current_time, user.username, 'info-successful sign in', 'post', 'sign in')
 
         session['uid'] = user.id
@@ -254,6 +257,9 @@ def api_setup_otp():
     user.otp_secret = otp_secret
     db.session.commit()
 
+    # require user to login again with otp
+    session.clear()
+
     otp_link = pyotp.totp.TOTP(otp_secret).provisioning_uri(name='scc363gp9@lancaster.ac.uk', issuer_name='Medical Data Security Framework Prototype')
     populate_db(current_time, user.username, 'info-seccessful otp sset up', 'post', 'set up otp')
     return jsonify({
@@ -299,6 +305,14 @@ def api_change_role():
             'status': 'fail',
             'data': {
                 'title': 'Not Admin'
+            }
+        })
+
+    if not session.get('otp'):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Login with OTP to perform sensitive actions'
             }
         })
 
@@ -394,6 +408,14 @@ def api_add_staff_record():
             }
         })
 
+    if not session.get('otp'):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Login with OTP to perform sensitive actions'
+            }
+        })
+
     request_payload = request.get_json()
     new_staff = Staff(name=request_payload['name'],
                       user_id=request_payload['user_id'])
@@ -462,6 +484,14 @@ def api_remove_staff_record():
             'status': 'fail',
             'data': {
                 'title': 'Not Admin'
+            }
+        })
+
+    if not session.get('otp'):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Login with OTP to perform sensitive actions'
             }
         })
 
@@ -544,6 +574,14 @@ def api_update_staff_record():
             'status': 'fail',
             'data': {
                 'title': 'Not Admin'
+            }
+        })
+
+    if not session.get('otp'):
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Login with OTP to perform sensitive actions'
             }
         })
 
