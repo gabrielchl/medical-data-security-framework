@@ -16,7 +16,7 @@ db = SQLAlchemy(app)
 
 from utils import weak_password, common_password, populate_db
 from models import User, Patient, Staff, History
-        
+
 @app.route('/')
 def index():
     return 'all requests should be made through api endpoints.'
@@ -79,6 +79,7 @@ def api_signup():
     db.session.commit()
     populate_db(current_time, username, 'info-successful sign in', 'post', 'sign up')
 
+
 @app.route('/api/signin', methods=['post'])
 def api_signin():
     if (
@@ -126,7 +127,7 @@ def api_signin():
             'user id': session['uid']
         })
 
-    
+
     populate_db(current_time, 'unknown', 'info-wrong credentials', 'post', 'sign in')
     return jsonify({
         'status': 'fail',
@@ -134,6 +135,7 @@ def api_signin():
             'title': 'Wrong credentials'
         }
     })
+
 
 @app.route('/api/change-pw', methods=['post'])
 def api_change_pw():
@@ -215,6 +217,7 @@ def api_change_pw():
         }
     })
 
+
 @app.route('/api/signout')
 def api_signout():
     if not session.get('uid'):
@@ -224,16 +227,17 @@ def api_signout():
         'data': {
            'title': 'Not logged in'
             }
-        })    
-    
+        })
+
     user = User.query.filter_by(id=session['uid']).first()
     session.clear()
-    
+
     populate_db(current_time, user.username, 'info-sucessful sign out', 'post', 'sign out')
     return jsonify({
         'status': 'success',
         'data': {}
     })
+
 
 @app.route('/api/setup-otp')
 def api_setup_otp():
@@ -243,7 +247,7 @@ def api_setup_otp():
             'data': {
                 'title': 'Not logged in'
             }
-        })    
+        })
 
     otp_secret = pyotp.random_base32()
     user = User.query.filter_by(id=session['uid']).first()
@@ -258,7 +262,8 @@ def api_setup_otp():
             'otp_link': otp_link
         }
     })
-    
+
+
 @app.route('/api/change-role', methods=['post'])
 def api_change_role():
     if (
@@ -272,7 +277,7 @@ def api_change_role():
                 'title': 'Missing data'
             }
         })
-        
+
     if not session.get('uid'):
         populate_db(current_time, 'unknown', 'info-not logged in', 'post', 'change role')
         return jsonify({
@@ -281,13 +286,13 @@ def api_change_role():
                 'title': 'Not logged in'
             }
         })
-    
+
     request_payload = request.get_json()
     username = request_payload['username']
     role = request_payload['role']
     request_user = User.query.filter_by(id=session['uid']).first()
     user = User.query.filter_by(username=username).first()
-    
+
     if not request_user.role == "Admin":
         populate_db(current_time, user.username, 'info-not admin', 'post', 'change role')
         return jsonify({
@@ -296,7 +301,7 @@ def api_change_role():
                 'title': 'Not Admin'
             }
         })
-        
+
     if role not in ['Admin', 'Regulator', 'Staff', 'Patient']:
         populate_db(current_time, user.username, 'info-non existing role', 'post', 'change role')
         return jsonify({
@@ -305,7 +310,7 @@ def api_change_role():
                 'title': 'Role not allowed'
             }
         })
-    
+
     if request_user == user:
         populate_db(current_time, user.username, 'info-can not change own role', 'post', 'change role')
         return jsonify({
@@ -314,7 +319,7 @@ def api_change_role():
                 'title': 'Cant change own role'
             }
         })
-    
+
     user.role = role
     db.session.commit()
     populate_db(current_time, user.username, 'info-successful role change', 'post', 'change role')
@@ -322,7 +327,8 @@ def api_change_role():
         'status': 'success',
         'data': {}
     })
-    
+
+
 @app.route('/api/add-patient-record', methods=['post'])
 def api_add_patient_record():
     if (
@@ -338,9 +344,9 @@ def api_add_patient_record():
                 'title': 'Missing data'
             }
         })
-        
+
     request_user = User.query.filter_by(id=session['uid']).first()
-        
+
     if request_user.role not in ['Admin', 'Staff']:
         populate_db(current_time, request_user.username, 'info-insufficient permision', 'post', 'add patient record')
         return jsonify({
@@ -349,12 +355,12 @@ def api_add_patient_record():
                 'title': 'Insufficient permissions'
             }
         })
-        
+
     request_payload = request.get_json()
     new_patient = Patient(name=request_payload['name'],
-                    age=request_payload['age'],
-                    user_id=request_payload['user_id'],
-                    doctor_id=request_payload['doctor_id'])
+                          age=request_payload['age'],
+                          user_id=request_payload['user_id'],
+                          doctor_id=request_payload['doctor_id'])
     db.session.add(new_patient)
     db.session.commit()
     populate_db(current_time, request_user.username, 'info-successful patient record added', 'post', 'add patient record')
@@ -362,7 +368,8 @@ def api_add_patient_record():
         'status': 'success',
         'data': {}
     })
-    
+
+
 @app.route('/api/add-staff-record', methods=['post'])
 def api_add_staff_record():
     if (
@@ -377,7 +384,7 @@ def api_add_staff_record():
             }
         })
     request_user = User.query.filter_by(id=session['uid']).first()
-    
+
     if not request_user.role == "Admin":
         populate_db(current_time, request_user.username, 'info-not admin', 'post', 'add staff record')
         return jsonify({
@@ -386,7 +393,7 @@ def api_add_staff_record():
                 'title': 'Not Admin'
             }
         })
-        
+
     request_payload = request.get_json()
     new_staff = Staff(name=request_payload['name'],
                       user_id=request_payload['user_id'])
@@ -397,7 +404,8 @@ def api_add_staff_record():
         'status': 'success',
         'data': {}
     })
-    
+
+
 @app.route('/api/remove-patient-record', methods=['post'])
 def api_remove_patient_record():
     if (
@@ -410,10 +418,10 @@ def api_remove_patient_record():
                 'title': 'Missing data'
             }
         })
-        
+
     request_payload = request.get_json()
     staff_user = User.query.filter_by(id=session['uid']).first()
-        
+
     if staff_user.role not in ['Admin', 'Staff']:
         populate_db(current_time, staff_user.username, 'info-insufficient permission', 'post', 'remove patient record')
         return jsonify({
@@ -422,8 +430,8 @@ def api_remove_patient_record():
                 'title': 'Insufficient permissions'
             }
         })
-    
-    Patient.query.filter_by(id=request_payload['id']).delete()    
+
+    Patient.query.filter_by(id=request_payload['id']).delete()
     db.session.commit()
     populate_db(current_time, user.username, 'info-successful patien record removed', 'post', 'remove patient record')
     return jsonify({
@@ -432,6 +440,7 @@ def api_remove_patient_record():
                 'title': 'Patient record deleted'
             }
         })
+
 
 @app.route('/api/remove-staff-record', methods=['post'])
 def api_remove_staff_record():
@@ -445,8 +454,8 @@ def api_remove_staff_record():
                 'title': 'Missing data'
             }
         })
-        
-    request_user = User.query.filter_by(id=session['uid']).first() 
+
+    request_user = User.query.filter_by(id=session['uid']).first()
     if not request_user.role == "Admin":
         populate_db(current_time, request_user.username, 'info-not admin', 'post', 'remove staff record')
         return jsonify({
@@ -455,10 +464,10 @@ def api_remove_staff_record():
                 'title': 'Not Admin'
             }
         })
-        
+
     request_payload = request.get_json()
-    
-    Staff.query.filter_by(id=request_payload['id']).delete()    
+
+    Staff.query.filter_by(id=request_payload['id']).delete()
     db.session.commit()
     populate_db(current_time, request_user.username, 'info-successful staff removed', 'post', 'remove staff record')
     return jsonify({
@@ -467,7 +476,8 @@ def api_remove_staff_record():
                 'title': 'Staff record deleted'
             }
         })
-    
+
+
 @app.route('/api/update-patient-record', methods=['post'])
 def api_update_patient_record():
     if (
@@ -484,9 +494,9 @@ def api_update_patient_record():
                 'title': 'Missing data'
             }
         })
-        
+
     staff_user = User.query.filter_by(id=session['uid']).first()
-        
+
     if staff_user.role not in ['Admin', 'Staff']:
         populate_db(current_time, staff_user.username, 'info-insufficient permission', 'post', 'update patient record')
         return jsonify({
@@ -495,13 +505,13 @@ def api_update_patient_record():
                 'title': 'Insufficient permissions'
             }
         })
-        
+
     request_payload = request.get_json()
     patient = Patient.query.filter_by(id=request_payload['id']).first()
     patient.name = request_payload['name']
     patient.age = request_payload['age']
     patient.user_id = request_payload['user_id']
-    patient.doctor_id = request_payload['doctor_id']    
+    patient.doctor_id = request_payload['doctor_id']
     db.session.commit()
     populate_db(current_time, staff_user.username, 'info-successful patient record updated', 'post', 'update patient record')
     return jsonify({
@@ -510,7 +520,8 @@ def api_update_patient_record():
                 'title': 'Patient record updated'
             }
         })
-    
+
+
 @app.route('/api/update-staff-record', methods=['post'])
 def api_update_staff_record():
     if (
@@ -525,8 +536,8 @@ def api_update_staff_record():
                 'title': 'Missing data'
             }
         })
-        
-    request_user = User.query.filter_by(id=session['uid']).first() 
+
+    request_user = User.query.filter_by(id=session['uid']).first()
     if not request_user.role == "Admin":
         populate_db(current_time, request_user.username, 'info-not admin', 'post', 'update staff record')
         return jsonify({
@@ -535,7 +546,7 @@ def api_update_staff_record():
                 'title': 'Not Admin'
             }
         })
-        
+
     request_payload = request.get_json()
     staff = Staff.query.filter_by(id=request_payload['id']).first()
     staff.name = request_payload['name']
@@ -549,7 +560,7 @@ def api_update_staff_record():
             }
         })
 
-@app.route ('/api/view')
+@app.route('/api/view')
 def api_view():
     if not session.get('uid'):
         return jsonify({
@@ -557,10 +568,10 @@ def api_view():
             'data': {
                 'title': 'Not logged in'
             }
-        })    
-    
+        })
+
     user = User.query.filter_by(id=session['uid']).first()
-    
+
     if user.role == 'Regulator':
         populate_db(current_time, user.username, 'info-successful Regulator view', 'request', 'view')
         all_patients = Patient.query.all()
@@ -568,7 +579,7 @@ def api_view():
             'status': 'success',
             'data': str(all_patients)
         })
-        
+
     if user.role == 'Staff':
         populate_db(current_time, user.username, 'info-successful Staff view', 'request', 'view')
         doctor = Staff.query.filter_by(user_id=session['uid']).first()
@@ -577,18 +588,18 @@ def api_view():
             'status': 'success',
             'data': str(all_patients)
         })
-    
+
     patient = Patient.query.filter_by(user_id=session['uid']).first()
-    
+
     if patient:
         return jsonify({
-        'status': 'success',
-        'data': {
-            'name': patient.name,
-            'age': patient.age
-        }
-    })
-    
+            'status': 'success',
+            'data': {
+                'name': patient.name,
+                'age': patient.age
+            }
+        })
+
     populate_db(current_time, user.username, 'info-no patient data found for you', 'request', 'view')
     return jsonify({
         'status': 'fail',
@@ -598,7 +609,7 @@ def api_view():
     })
 
 
-@app.route ('/api/logs')
+@app.route('/api/logs')
 def api_logs():
 
     #check if user is signed in
@@ -608,10 +619,10 @@ def api_logs():
             'data': {
                 'title': 'Not logged in'
             }
-        })    
-    
+        })
+
     user = User.query.filter_by(id=session['uid']).first()
-    
+
     if user.role == 'Admin':
         populate_db(current_time, user.username, 'info-successful audit logs view', 'request', 'audit logs')
         all_logs = History.query.all()
@@ -619,7 +630,3 @@ def api_logs():
             'status': 'success',
             'data': str(all_logs)
         })
-    
-
-    
-   
