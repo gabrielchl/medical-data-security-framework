@@ -2,6 +2,7 @@ import datetime
 
 from app import db
 
+
 class Patient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), nullable=False)
@@ -29,3 +30,15 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User {} {} {}>'.format(self.id, self.username, self.role)
+
+class History(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    time = db.Column(db.String(80), nullable=False)
+    user_id = db.Column(db.String(80))
+    severity = db.Column(db.String(80), nullable=False)
+    log_type = db.Column(db.String(80), nullable=False)
+    message = db.Column(db.String(80), nullable=False)
+    
+    def __repr__(self):
+        return '<History {} {} {} {} {} {}>'.format(self.id, self.time, self.user_id, self.severity, self.log_type, self.message)
+   
