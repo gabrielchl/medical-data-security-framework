@@ -84,7 +84,7 @@ def change_role(username, role):
         'username': username,
         'role': role
     }
-    
+
     response = s.post(
         '{}/api/change-role'.format(server_url),
         json=payload
@@ -94,7 +94,7 @@ def change_role(username, role):
 def view():
     response = s.get('{}/api/view'.format(server_url)).json()
     print(response)
-    
+
 def add_patient_record(name, age, user_id, doctor_id):
     payload = {
         'name': name,
@@ -107,7 +107,7 @@ def add_patient_record(name, age, user_id, doctor_id):
         json=payload
     )
     print(response.json())
-    
+
 def add_staff_record(name, user_id):
     payload = {
         'name': name,
@@ -118,7 +118,7 @@ def add_staff_record(name, user_id):
         json=payload
     )
     print(response.json())
-    
+
 def remove_patient_record(id):
     payload = {
         'id': id
@@ -138,7 +138,7 @@ def remove_staff_record(id):
         json=payload
     )
     print(response.json())
-        
+
 def update_patient_record(id, name, age, user_id, doctor_id):
     payload = {
         'id': id,
@@ -152,7 +152,7 @@ def update_patient_record(id, name, age, user_id, doctor_id):
         json=payload
     )
     print(response.json())
-    
+
 def update_staff_record(id, name, user_id):
     payload = {
         'id': id,
@@ -163,10 +163,16 @@ def update_staff_record(id, name, user_id):
         '{}/api/update-staff-record'.format(server_url),
         json=payload
     )
-    print(response.json())        
-        
+    print(response.json())
+
+
 def logs():
     response = s.get('{}/api/logs'.format(server_url)).json()
+    print(response)
+
+
+def backup():
+    response = s.get('{}/api/backupdb'.format(server_url)).json()
     print(response)
 
 class Command:
@@ -184,13 +190,14 @@ commands = [
     Command('setup_otp', 0, setup_otp),
     Command('change_role', 2, change_role),
     Command('view', 0, view),
-    Command('add_patient_record', 4,add_patient_record),
-    Command('add_staff_record', 2,add_staff_record),
-    Command('remove_patient_record', 1,remove_patient_record),
-    Command('remove_staff_record', 1,remove_staff_record),
-    Command('update_patient_record', 5,update_patient_record),
-    Command('update_staff_record', 3,update_staff_record),
-    Command('logs', 0, logs)
+    Command('add_patient_record', 4, add_patient_record),
+    Command('add_staff_record', 2, add_staff_record),
+    Command('remove_patient_record', 1, remove_patient_record),
+    Command('remove_staff_record', 1, remove_staff_record),
+    Command('update_patient_record', 5, update_patient_record),
+    Command('update_staff_record', 3, update_staff_record),
+    Command('logs', 0, logs),
+    Command('backup', 0, backup)
 ]
 
 

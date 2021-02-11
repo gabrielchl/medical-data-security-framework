@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request, session
 from flask_sqlalchemy import SQLAlchemy
 import pyotp
 from datetime import datetime
+import shutil
 
 now = datetime.now()
 
@@ -668,3 +669,41 @@ def api_logs():
             'status': 'success',
             'data': str(all_logs)
         })
+
+
+@app.route('/api/backupdb')
+def api_backupdb():
+    if not session.get('uid'):
+        populate_db(current_time, 'unknown', 'info-not logged in', 'request', 'backup')
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Not logged in'
+            }
+        })
+
+    request_user = User.query.filter_by(id=session['uid']).first()
+
+    if not request_user.role == "Admin":
+        populate_db(current_time, request_user.username, 'info-not admin', 'request', 'backup')
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Not Admin'
+            }
+        })
+
+    if not session.get('otp'):
+        populate_db(current_time, request_user.username, 'info-otp required', 'request', 'backup')
+        return jsonify({
+            'status': 'fail',
+            'data': {
+                'title': 'Login with OTP to perform sensitive actions'
+            }
+        })
+
+    shutil.copy('prod.db', 'prod-{}.db'.format(datetime.now().strftime("%Y-%m-%d-%H-%M-%S")))
+    return jsonify({
+        'status': 'success',
+        'data': {}
+    })
