@@ -1,7 +1,7 @@
 import re
 
 from app import db
-from models import Logs
+from models import History
 
 def weak_password(password):
     if len(password) < 5:
@@ -28,7 +28,7 @@ def common_password(password):
 
 def populate_db(time_p, user_id_p, severity_p, log_type_p, message_p):
     
-    new_log = Logs( time=time_p,
+    new_log = History( time=time_p,
                     user_id=user_id_p,
                     severity=severity_p,
                     log_type=log_type_p,

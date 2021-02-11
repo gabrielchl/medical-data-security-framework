@@ -2,7 +2,11 @@ import bcrypt
 from flask import Flask, jsonify, request, session
 from flask_sqlalchemy import SQLAlchemy
 import pyotp
+from datetime import datetime
 
+now = datetime.now()
+
+current_time = now.strftime("%d/%m/%Y")
 
 app = Flask(__name__)
 
@@ -11,7 +15,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///prod.db'
 db = SQLAlchemy(app)
 
 from utils import weak_password, common_password, populate_db
-from models import User, Patient, Staff, Logs
+from models import User, Patient, Staff, History
         
 @app.route('/')
 def index():
@@ -38,6 +42,7 @@ def api_signup():
 
     user = User.query.filter_by(username=username).first()
     if user:
+        populate_db(current_time, 'unknown', 'warning-username occupied', 'post', 'sign up')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -46,6 +51,7 @@ def api_signup():
         })
 
     if weak_password(password):
+        populate_db(current_time, 'unknown', 'warning-weak password', 'post', 'sign up')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -54,6 +60,7 @@ def api_signup():
         })
 
     if common_password(password):
+        populate_db(current_time, 'uknown', 'warning-common password', 'post', 'sign up')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -61,12 +68,16 @@ def api_signup():
             }
         })
 
+
     password = bcrypt.hashpw(str.encode(password),
                              bcrypt.gensalt())
+
+
 
     new_user = User(username=username, password=password, role='Patient')
     db.session.add(new_user)
     db.session.commit()
+    populate_db(current_time, username, 'info-successful sign in', 'post', 'sign up')
 
 @app.route('/api/signin', methods=['post'])
 def api_signin():
@@ -106,17 +117,17 @@ def api_signin():
                 })
 
         session['uid']= user.id
-        populate_db('time', user.id, 'severity', 'logtype', 'message')
+        populate_db(current_time, user.username, 'info-successful sign in', 'post', 'sign in')
 
         session['uid'] = user.id
         return jsonify({
             'status': 'success',
             'data': {},
-            '-----xxx------user id--------': session['uid']
+            'user id': session['uid']
         })
 
     
-
+    populate_db(current_time, 'unknown', 'info-wrong credentials', 'post', 'sign in')
     return jsonify({
         'status': 'fail',
         'data': {
@@ -168,6 +179,7 @@ def api_change_pw():
         new_password = request_payload['new_password']
 
         if weak_password(new_password):
+            populate_db(current_time, user.username, 'info-weak passowrd', 'post', 'change password')
             return jsonify({
                 'status': 'fail',
                 'data': {
@@ -176,6 +188,7 @@ def api_change_pw():
             })
 
         if common_password(new_password):
+            populate_db(current_time, user.username, 'info-common password', 'post', 'change password')
             return jsonify({
                 'status': 'fail',
                 'data': {
@@ -187,12 +200,14 @@ def api_change_pw():
             str.encode(new_password),
             bcrypt.gensalt()
         )
+        populate_db(current_time, user.username, 'info-successful password change', 'post', 'change password')
         db.session.commit()
         return jsonify({
             'status': 'success',
             'data': {}
         })
 
+    populate_db(current_time, user.username, 'info-wrong credentials', 'post', 'change password')
     return jsonify({
         'status': 'fail',
         'data': {
@@ -202,7 +217,19 @@ def api_change_pw():
 
 @app.route('/api/signout')
 def api_signout():
+    if not session.get('uid'):
+      populate_db(current_time,'uknown', 'info-not logged for sign out', 'post', 'sign out')
+      return jsonify({
+        'status': 'fail',
+        'data': {
+           'title': 'Not logged in'
+            }
+        })    
+    
+    user = User.query.filter_by(id=session['uid']).first()
     session.clear()
+    
+    populate_db(current_time, user.username, 'info-sucessful sign out', 'post', 'sign out')
     return jsonify({
         'status': 'success',
         'data': {}
@@ -224,6 +251,7 @@ def api_setup_otp():
     db.session.commit()
 
     otp_link = pyotp.totp.TOTP(otp_secret).provisioning_uri(name='scc363gp9@lancaster.ac.uk', issuer_name='Medical Data Security Framework Prototype')
+    populate_db(current_time, user.username, 'info-seccessful otp sset up', 'post', 'set up otp')
     return jsonify({
         'status': 'success',
         'data': {
@@ -246,6 +274,7 @@ def api_change_role():
         })
         
     if not session.get('uid'):
+        populate_db(current_time, 'unknown', 'info-not logged in', 'post', 'change role')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -260,6 +289,7 @@ def api_change_role():
     user = User.query.filter_by(username=username).first()
     
     if not request_user.role == "Admin":
+        populate_db(current_time, user.username, 'info-not admin', 'post', 'change role')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -268,6 +298,7 @@ def api_change_role():
         })
         
     if role not in ['Admin', 'Regulator', 'Staff', 'Patient']:
+        populate_db(current_time, user.username, 'info-non existing role', 'post', 'change role')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -276,6 +307,7 @@ def api_change_role():
         })
     
     if request_user == user:
+        populate_db(current_time, user.username, 'info-can not change own role', 'post', 'change role')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -285,7 +317,7 @@ def api_change_role():
     
     user.role = role
     db.session.commit()
-    
+    populate_db(current_time, user.username, 'info-successful role change', 'post', 'change role')
     return jsonify({
         'status': 'success',
         'data': {}
@@ -310,6 +342,7 @@ def api_add_patient_record():
     request_user = User.query.filter_by(id=session['uid']).first()
         
     if request_user.role not in ['Admin', 'Staff']:
+        populate_db(current_time, request_user.username, 'info-insufficient permision', 'post', 'add patient record')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -324,7 +357,7 @@ def api_add_patient_record():
                     doctor_id=request_payload['doctor_id'])
     db.session.add(new_patient)
     db.session.commit()
-    
+    populate_db(current_time, request_user.username, 'info-successful patient record added', 'post', 'add patient record')
     return jsonify({
         'status': 'success',
         'data': {}
@@ -346,6 +379,7 @@ def api_add_staff_record():
     request_user = User.query.filter_by(id=session['uid']).first()
     
     if not request_user.role == "Admin":
+        populate_db(current_time, request_user.username, 'info-not admin', 'post', 'add staff record')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -358,7 +392,7 @@ def api_add_staff_record():
                       user_id=request_payload['user_id'])
     db.session.add(new_staff)
     db.session.commit()
-    
+    populate_db(current_time, request_user.username, 'info-successful staff record added', 'post', 'add staff record')
     return jsonify({
         'status': 'success',
         'data': {}
@@ -381,6 +415,7 @@ def api_remove_patient_record():
     staff_user = User.query.filter_by(id=session['uid']).first()
         
     if staff_user.role not in ['Admin', 'Staff']:
+        populate_db(current_time, staff_user.username, 'info-insufficient permission', 'post', 'remove patient record')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -390,6 +425,7 @@ def api_remove_patient_record():
     
     Patient.query.filter_by(id=request_payload['id']).delete()    
     db.session.commit()
+    populate_db(current_time, user.username, 'info-successful patien record removed', 'post', 'remove patient record')
     return jsonify({
             'status': 'success',
             'data': {
@@ -412,6 +448,7 @@ def api_remove_staff_record():
         
     request_user = User.query.filter_by(id=session['uid']).first() 
     if not request_user.role == "Admin":
+        populate_db(current_time, request_user.username, 'info-not admin', 'post', 'remove staff record')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -423,6 +460,7 @@ def api_remove_staff_record():
     
     Staff.query.filter_by(id=request_payload['id']).delete()    
     db.session.commit()
+    populate_db(current_time, request_user.username, 'info-successful staff removed', 'post', 'remove staff record')
     return jsonify({
             'status': 'success',
             'data': {
@@ -450,6 +488,7 @@ def api_update_patient_record():
     staff_user = User.query.filter_by(id=session['uid']).first()
         
     if staff_user.role not in ['Admin', 'Staff']:
+        populate_db(current_time, staff_user.username, 'info-insufficient permission', 'post', 'update patient record')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -464,6 +503,7 @@ def api_update_patient_record():
     patient.user_id = request_payload['user_id']
     patient.doctor_id = request_payload['doctor_id']    
     db.session.commit()
+    populate_db(current_time, staff_user.username, 'info-successful patient record updated', 'post', 'update patient record')
     return jsonify({
             'status': 'success',
             'data': {
@@ -488,6 +528,7 @@ def api_update_staff_record():
         
     request_user = User.query.filter_by(id=session['uid']).first() 
     if not request_user.role == "Admin":
+        populate_db(current_time, request_user.username, 'info-not admin', 'post', 'update staff record')
         return jsonify({
             'status': 'fail',
             'data': {
@@ -500,6 +541,7 @@ def api_update_staff_record():
     staff.name = request_payload['name']
     staff.user_id = request_payload['user_id']
     db.session.commit()
+    populate_db(current_time, request_user.username, 'info-successful staff record updated', 'post', 'update staff record')
     return jsonify({
             'status': 'success',
             'data': {
@@ -520,6 +562,7 @@ def api_view():
     user = User.query.filter_by(id=session['uid']).first()
     
     if user.role == 'Regulator':
+        populate_db(current_time, user.username, 'info-successful Regulator view', 'request', 'view')
         all_patients = Patient.query.all()
         return jsonify({
             'status': 'success',
@@ -527,6 +570,7 @@ def api_view():
         })
         
     if user.role == 'Staff':
+        populate_db(current_time, user.username, 'info-successful Staff view', 'request', 'view')
         doctor = Staff.query.filter_by(user_id=session['uid']).first()
         all_patients = Patient.query.filter_by(doctor_id=doctor.id).all()
         return jsonify({
@@ -545,6 +589,7 @@ def api_view():
         }
     })
     
+    populate_db(current_time, user.username, 'info-no patient data found for you', 'request', 'view')
     return jsonify({
         'status': 'fail',
         'data': {
@@ -552,10 +597,6 @@ def api_view():
         }
     })
 
-
-    # commit and push check 
-    # new branch
-    
 
 @app.route ('/api/logs')
 def api_logs():
@@ -572,13 +613,13 @@ def api_logs():
     user = User.query.filter_by(id=session['uid']).first()
     
     if user.role == 'Admin':
-        all_logs = Logs.query.all()
+        populate_db(current_time, user.username, 'info-successful audit logs view', 'request', 'audit logs')
+        all_logs = History.query.all()
         return jsonify({
             'status': 'success',
             'data': str(all_logs)
         })
     
 
-   # logs = Logs.query.filter_by(user_id=session['uid']).first()
     
    

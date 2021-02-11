@@ -31,7 +31,7 @@ class User(db.Model):
     def __repr__(self):
         return '<User {} {} {}>'.format(self.id, self.username, self.role)
 
-class Logs(db.Model):
+class History(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     time = db.Column(db.String(80), nullable=False)
     user_id = db.Column(db.String(80))
@@ -40,5 +40,5 @@ class Logs(db.Model):
     message = db.Column(db.String(80), nullable=False)
     
     def __repr__(self):
-        return '<Logs {} {} {} {} {} {}>'.format(self.id, self.time, self.user_id, self.severity, self.log_type, self.message)
+        return '<History {} {} {} {} {} {}>'.format(self.id, self.time, self.user_id, self.severity, self.log_type, self.message)
    
