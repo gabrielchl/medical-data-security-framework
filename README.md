@@ -14,5 +14,12 @@
 3. run client by running `python3 main.py`
 4. check all available commands by typing in `help`
 
+### Example Accounts
+Admin: Conor
+Regulator: testReg
+Patient: testPat
+
+All accounts share the same password: Password123#
+
 ## Sources
 List of common passwords: https://github.com/danielmiessler/SecLists/blob/master/Passwords/Common-Credentials/10k-most-common.txt

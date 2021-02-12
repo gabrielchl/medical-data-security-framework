@@ -80,6 +80,11 @@ def api_signup():
     db.session.commit()
     add_log_entry(current_time, username, 'normal', 'authentication', 'success: sign up')
 
+    return jsonify({
+        'status': 'success',
+        'data': {}
+    })
+
 
 @app.route('/api/signin', methods=['post'])
 def api_signin():
